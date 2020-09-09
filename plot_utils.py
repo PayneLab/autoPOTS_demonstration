@@ -7,7 +7,7 @@ from numpy import isnan
 import numpy as np
 import pandas as pd
 
-def PCA_by_type(data, cell_types=["B_cells","T_cells"]):
+def PCA_by_type(data, cell_types=["B_cells","T_cells"], save_as=''):
     pca = PCA(n_components=5)
 
     alist=data.values.flatten()
@@ -24,4 +24,8 @@ def PCA_by_type(data, cell_types=["B_cells","T_cells"]):
         plt.scatter(pca_result[cells_of_type,0],pca_result[cells_of_type,1])
 
     plt.legend(cell_types, loc='upper left', bbox_to_anchor=(1.05, 1))
+    
+    if save_as!='':
+        plt.savefig(save_as, bbox_inches='tight', dpi=300)
+        
     return figure
