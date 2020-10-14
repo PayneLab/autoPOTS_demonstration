@@ -1,81 +1,97 @@
 import pandas as pd
 import requests
 import os.path
+import bs4
 from os import path
 
 #Data loader functions belong here. This is where
 #  information about the data files is found.
 
-def load_max_quant():
+def load_max_quant(version="", level='protein', 
+                   prefix="Intensity", contains=["_"],
+                   sample_type=""
+                  ):
     #Takes a file and returns a dataframe.
-    #    file: the file path to read from
+    #    version indicates the file path to read from
     #    The rest of the paramters are used to select the columns.
     #    By default, it will look for ones starting with 'Reporter intensity'
     #        that do not contain 'count' or 'corrected' and use the 'Protein IDs'
     #        column as the indecies. These will be the raw intensity values.
-    file = download_file(download_to_path="data/proteinGroups-Sub1-noMBR.txt", url_file_path="data/proteinGroups_url.txt")
-        
-    prefix="Intensity"
-    contains=["_"]
-
-    with open(file, 'r') as _file:
-        line = _file.readline().strip()
-        headings = line.split('\t')
-    headings = [i.strip('"') for i in headings]
+    if level=='protein':
+        path = "data/proteinGroups_{0}.txt".format(version)
+        url = "data/proteinGroups_{0}_url.txt".format(version)
+    else:
+        path = "data/peptides_{0}.txt".format(version)
+        url = "data/peptides_{0}_url.txt".format(version)
+    file = download_file(download_to_path=path, url_file_path=url)
+    
+    #read in data
+    df = pd.read_csv(file, sep='\t', header=0, index_col=0)
+    
+    #filter the columns based on the prefix and other "contains" requirements
+    headings = df.columns
     if prefix:#filter by columns beginning in prefix
         headings = [i for i in headings if i.startswith(prefix)]
     for req in contains:
         headings = [i for i in headings if req in i]
-    
-    final_col = ["Protein IDs"]
-    for i in headings: final_col.append(i)
-    df = pd.read_csv(file, sep='\t', header=0, index_col=0)
+        
+    #drop contaminents and decoys
     df = df.drop(df[df['Potential contaminant'] == '+'].index)
     df = df.drop(df[df.Reverse == '+'].index)
+    
+    #optionally, discard those that were only identified by site
     df = df.drop(df[df['Only identified by site'] == '+'].index)
+    
     df = df[headings]
+    
+    # Remove the prefix (ie, "Total Intensity") from the column names
+    # optionally prepends a sample type (ie, "HeLa"
+    new_names={}
+    for c in df.columns.values: 
+        sample_name = c[len(prefix):].strip()
+        new_names[c] = "{0}_{1}".format(sample_type, sample_name)
+    df.rename(columns=new_names, inplace=True)
+    df.head()
 
     return df
 
-def load_FragPipe(month='June', contains=['Subject1']):
+def load_FragPipe(month='June', contains=['Subject1'],level='protein', 
+    suffix="Total Intensity"):
     #Takes a file and returns a dataframe.
     #    file: the file path to read from
     #    The rest of the paramters are used to select the columns.
     #    By default, it will look for ones ending with 'Total intensity'
     #        that do not contain 'count' or 'corrected' and use the 'Protein IDs'
     #        column as the indecies. These will be the raw intensity values.
-    file_name="data/combined_protein_{0}_FP.tsv".format(month)
-    url_file_path="data/combined_protein_{0}_FP_url.txt".format(month)
+    file_name="data/combined_{0}_{1}_FP.tsv".format(level, month)
+    url_file_path="data/combined_{0}_{1}_FP_url.txt".format(level,month)
     file = download_file(download_to_path=file_name, url_file_path=url_file_path)
     if file==1:
         print("Error with file download.")
         return False
         
-    suffix="Total Intensity"
     if month=='June':not_contains=['15']#drop extra replicate - Yiran said these two weren't good quality, I just forgot to not run it so for now I'll exclude it at this level
     else: not_contains=[]
 
-    with open(file, 'r') as _file:
-        line = _file.readline().strip()
-        headings = line.split('\t')
-    headings = [i.strip('"') for i in headings]
-    if suffix:#filter by columns beginning in prefix
+    #read in data
+    if level == 'protein': index_col = 3
+    else: index_col=0 #for peptides and by default, take the first column as index
+    df = pd.read_csv(file, sep='\t', header=0, index_col=index_col)
+    
+    #filter the columns based on the prefix and other "contains" requirements
+    headings = df.columns
+    
+    if suffix:#filter by options such as suffix, contains
         headings = [i for i in headings if i.endswith(suffix)]
     for req in contains:
         headings = [i for i in headings if req in i]
     for req in not_contains:
         headings = [i for i in headings if req not in i]
     
-    final_col = ["Protein ID"]
-    for i in headings: final_col.append(i)
-    df = pd.read_csv(file, sep='\t', header=0, index_col=3)
-    #df = df.drop(df[df['Potential contaminant'] == '+'].index)
-    #df = df.drop(df[df.Reverse == '+'].index)
-    #df = df.drop(df[df['Only identified by site'] == '+'].index)
     df = df[headings]
     
     
-    # Remove the "Total Intensity" part of the column names
+    # Remove the suffix (ie, "Total Intensity") from the column names
     new_names={}
     for c in df.columns.values: 
         new_names[c] = c.split(' ')[0]
