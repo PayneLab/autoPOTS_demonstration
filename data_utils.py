@@ -21,23 +21,37 @@ def get_of_type(cell_type, names, option='contains'):
         return ('INVALID OPTION')
     return cells_of_type
         
-def check_present(row):
+def check_present(row, null_value='nan'):
     bool_row = []
     for i in row:
-        bool_row.append(not isnan(i))
+        if null_value == 'nan':
+            bool_row.append(not isnan(i))
+        elif null_value== 0:
+            bool_row.append(i !=0)
     return sum(bool_row)
 
-def check_three_of_each_type(row, cell_types=["1_B_", "1_T_"], option='contains', min_reps=3):
+def check_three_of_each_type(row, cell_types=["1_B_", "1_T_"], option='contains', min_reps=3,null_value='nan'):
     present_in_types = []
     for i in cell_types:
         cells_of_type=get_of_type(i, row.index, option=option)
         data_by_type = row.loc[cells_of_type]
-        in_type = check_present(data_by_type)
+        in_type = check_present(data_by_type,null_value=null_value)
         three_in_type = bool(in_type >= min_reps)
         present_in_types.append(three_in_type)
     if sum(present_in_types) == len(cell_types):
         return True
     else: return False
+    
+def presence_by_type(row, cell_types=["1_B_", "1_T_"], option='contains', min_reps=3, null_value='nan'):
+    present_in_types = {}
+    for i in cell_types:
+        cells_of_type=get_of_type(i, row.index, option=option)
+        data_by_type = row.loc[cells_of_type]
+        in_type = check_present(data_by_type, null_value=null_value)
+        three_in_type = bool(in_type >= min_reps)
+        present_in_types[i] = three_in_type
+    return pd.Series(present_in_types)
+     
     
 def check_presence_absence(row, cell_types=["1_B_", "1_T_"], min_reps=3, option='contains'):
     present_in_types = {}
