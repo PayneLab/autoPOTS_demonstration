@@ -39,8 +39,10 @@ def load_max_quant(version="", level='protein',
     df = df.drop(df[df['Potential contaminant'] == '+'].index)
     df = df.drop(df[df.Reverse == '+'].index)
     
-    #optionally, discard those that were only identified by site
-    df = df.drop(df[df['Only identified by site'] == '+'].index)
+    if level=='protein':
+        #optionally, discard those that were only identified by site
+        #this will not work for peptide
+        df = df.drop(df[df['Only identified by site'] == '+'].index)
     
     df = df[headings]
     
@@ -97,7 +99,7 @@ def load_FragPipe(month='June', contains=['Subject1'],level='protein',
         new_names[c] = c.split(' ')[0]
     df.rename(columns=new_names, inplace=True)
     df.head()
-
+    
     return df
 
 def download_file(download_to_path="data/datafile.txt", url_file_path="data/url.txt", 
@@ -173,7 +175,7 @@ def names_max_quant():
     return df
     
     
-def names_FragPipe(month='June', contains=['Subject1']):
+def names_FragPipe(month='lymph_forPRIDE', contains=['Subject1']):
     file_name="data/combined_protein_{0}_FP.tsv".format(month)
     url_file_path="data/combined_protein_{0}_FP_url.txt".format(month)
     file = download_file(download_to_path=file_name, url_file_path=url_file_path)
