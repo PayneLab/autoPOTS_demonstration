@@ -3,7 +3,10 @@
 This is the analysis used in the publication "Fully automated sample processing and analysis workflow for low-input proteome profiling" by Liang et al. with the Kelly lab at Brigham Young University. 
 
 ## Publication
-The manuscript is currently in its initial stages.
+Fully Automated Sample Processing and Analysis Workflow for Low-Input Proteome Profiling
+Yiran Liang, Hayden Acor, Michaela A. McCown, Andikan J. Nwosu, Hannah Boekweg, Nathaniel B. Axtell, Thy Truong, Yongzheng Cong, Samuel H. Payne, and Ryan T. Kelly
+Analytical Chemistry Article ASAP
+DOI: 10.1021/acs.analchem.0c04240 
 
 ## Repository contents
 This repository contains all information, data and code necessary to replicate the analyses in the manuscript. The file names are intentionally self explanatory, but are briefly reviewed below.
